@@ -8,6 +8,17 @@ using System.Drawing.Imaging;
 
 namespace ImageQuantization
 {
+	class Edge
+	{
+		public int source, destnation;
+		public Edge(int src,int dest)
+		{
+			source = src;
+			destnation = dest;
+		
+		}
+	}
+
     class QuantizationProcess
     {
         /// <summary>
@@ -23,7 +34,8 @@ namespace ImageQuantization
 
         private double eculideanDistance(RGBPixel rgb1, RGBPixel rgb2)
         {
-            return Math.Sqrt((Math.Pow((rgb1.red - rgb2.red), 2)) + (Math.Pow((rgb1.green - rgb2.green), 2)) + (Math.Pow((rgb1.blue - rgb2.blue), 2)));
+			double res;
+            return  res = Math.Sqrt((Math.Pow((rgb1.red - rgb2.red), 2)) + (Math.Pow((rgb1.green - rgb2.green), 2)) + (Math.Pow((rgb1.blue - rgb2.blue), 2)));
         }
 
         public HashSet<RGBPixel> GetDistinct()
@@ -39,8 +51,8 @@ namespace ImageQuantization
             return distinct;
         }
         HashSet<HashSet<int>> Vertices = new HashSet<HashSet<int>>();
-        SortedList<double, KeyValuePair<int, int>>edges = new SortedList<double, KeyValuePair<int, int>>();
-        SortedList<double, KeyValuePair<int, int>> result = new SortedList<double, KeyValuePair<int, int>>();
+        SortedList<double, Edge>edges = new SortedList<double, Edge>();
+        SortedList<double, Edge> result = new SortedList<double, Edge>();
 
         private void calculateDistances()
         {
@@ -49,10 +61,17 @@ namespace ImageQuantization
             for (int i = 0; i < numberOfDistinctColors; i++)
             {
                 Vertices.Add(new HashSet<int>());
-                Vertices.ElementAt(i).Add(i + 1);
+                Vertices.ElementAt(i).Add(i);
                 for (int j = i+1; j < numberOfDistinctColors; j++)
                 {
-                    edges.Add(eculideanDistance(distinct.ElementAt(i), distinct.ElementAt(j)), new KeyValuePair<int, int>(i, j));
+					try
+					{
+						edges.Add(eculideanDistance(distinct.ElementAt(i), distinct.ElementAt(j)), new Edge(i, j));
+					}
+					catch (Exception e)
+					{//if the eculideanDistance is already found as a key in edges list then ignor this edge and continue
+						continue;
+					}
                 }
             }
 
@@ -61,16 +80,19 @@ namespace ImageQuantization
 
         
 
-        private SortedList<double, KeyValuePair<int, int>> MST()
+        private SortedList<double, Edge> MST()
         {
+			//for testing summition in sample cases
+			double sum = 0;
+
             calculateDistances();
             int numberOfEdges = edges.Count;
             int numberOfVertices;
             int x, y, a=0, b=0;      
             for (int i=0;i< numberOfEdges; i++)
             {
-                x = edges.ElementAt(i).Value.Key;
-                y = edges.ElementAt(i).Value.Value;
+                x = edges.ElementAt(i).Value.source;
+                y = edges.ElementAt(i).Value.destnation;
                 numberOfVertices = Vertices.Count();
 
                 for (int j = 0; j < numberOfVertices; j++)
@@ -96,9 +118,16 @@ namespace ImageQuantization
                 {
                     Vertices.ElementAt(a).UnionWith(Vertices.ElementAt(b));
                     Vertices.Remove(Vertices.ElementAt(b));
-                    result.Add(edges.ElementAt(i).Key, new KeyValuePair<int, int>(x, y));
-                }
+                    result.Add(edges.ElementAt(i).Key,new Edge(x,y));
+					sum += edges.ElementAt(i).Key;
+
+				}
+				if (Vertices.Count == 1)
+					break;
             }
+
+		//for testing summition in sample cases
+			MessageBox.Show(sum.ToString());
             return result;
 
         }
