@@ -151,8 +151,11 @@ namespace ImageQuantization
             }
             PicBox.Image = ImageBMP;
 
+		//************TEST*************************
 			QuantizationProcess test = new QuantizationProcess();
 			test.bate5();
+
+		//*************TEST**********************
         }
 
 
