@@ -28,14 +28,6 @@ namespace ImageQuantization
 			}
 		}
 
-		//deletes a vertix and returns the size of the heap after deletion
-		public int Delete(Edge[] arr,int i)
-		{
-			arr[i] = arr[arr.Length - 1];
-			heapify(arr, arr.Length - 1, i);
-			return arr.Length-1;
-		}
-
 		// To heapify a subtree rooted with node i which is 
 		// an index in arr[]. n is size of heap 
 		void heapify(Edge[] arr, int n, int i)
@@ -62,15 +54,6 @@ namespace ImageQuantization
 				// Recursively heapify the affected sub-tree 
 				heapify(arr, n, largest);
 			}
-		}
-
-		/* A utility function to print array of size n */
-		static void printArray(int[] arr)
-		{
-			int n = arr.Length;
-			for (int i = 0; i < n; ++i)
-				Console.Write(arr[i] + " ");
-			Console.Read();
 		}
 
 	}
