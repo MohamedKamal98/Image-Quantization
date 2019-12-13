@@ -8,204 +8,161 @@ using System.Drawing.Imaging;
 
 namespace ImageQuantization
 {
-
-	/// <summary>
+    
+    /// <summary>
 	///class Edge has 3 properties source,destination,weight
 	/// </summary>
-	public class Edge 
-	{
-		public int source, destnation;
-		public double weight = 0;
-		/// <summary>
-		///Constructor of Edge
-		/// </summary>
-		/// <param name="src"></param>
-		/// <param name="dest"></param>
-		/// <param name="w"></param>
-		public Edge(int src, int dest, double w)
-		{
-			source = src;
-			destnation = dest;
-			weight = w;
-		}
-
-	}
-
-	class QuantizationProcess
+	public class Edge
     {
-		/// <summary>
-		/// Get the 2D array of colors (size: Height x Width) from Main Form
-		/// </summary>
-		/// <returns>2D array of colors</returns>
-		public RGBPixel[,] GetMatrix()
+        public int source, destnation;
+        public double weight = 0;
+        /// <summary>
+        ///Constructor of Edge
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dest"></param>
+        /// <param name="w"></param>
+        public Edge(int src, int dest, double w)
+        {
+            source = src;
+            destnation = dest;
+            weight = w;
+        }
+
+    }
+
+
+    class QuantizationProcess
+    {
+        
+        /// <summary>
+        /// Get the 2D array of colors (size: Height x Width) from Main Form
+        /// </summary>
+        /// <returns>2D array of colors</returns>
+        public RGBPixel[,] getMatrix()
         {
             return MainForm.ImageMatrix;
         }
 
-        
-		
-
+        HashSet<RGBPixel> distinct = new HashSet<RGBPixel>();
 		/// <summary>
-		/// Get the weight (eculidean Distance) between 2 vertices
+		/// Calculates eculidean distance between the given two edges
 		/// </summary>
 		/// <param name="rgb1"></param>
 		/// <param name="rgb2"></param>
-		/// <returns>double weight </returns>
+		/// <returns>double Eculidean Distance</returns>
         private double EculideanDistance(RGBPixel rgb1, RGBPixel rgb2)
         {
-			double res;
-			return res = Math.Sqrt(Math.Pow(rgb1.red - rgb2.red, 2) + Math.Pow(rgb1.green - rgb2.green, 2) + Math.Pow(rgb1.blue - rgb2.blue, 2));
+            return Math.Sqrt((Math.Pow((rgb1.red - rgb2.red), 2)) + (Math.Pow((rgb1.green - rgb2.green), 2)) + (Math.Pow((rgb1.blue - rgb2.blue), 2)));
         }
-
-
-	//contains distinct colors
-		HashSet<RGBPixel> distinct = new HashSet<RGBPixel>();
-	//contains the parent of each vertix(the parent of each vertix is intialized with itself)
-		int[] parent;
-	//contains the rank(depth) of each vertix(initialized by zero)
-		int[] rank;
-
 		/// <summary>
-		/// Get the list of Distinct Colors
+		/// Gets the distinct colors from the matrix of colors
 		/// </summary>
-		/// <returns>HashSet of distinct colors</returns>
-		public HashSet<RGBPixel> GetDistinctColors()
+		/// <returns>Set of colors</returns>
+        public HashSet<RGBPixel> GetDistinct()
         {
-            for (int i = 0; i < GetMatrix().GetLength(0); i++)
+            for (int i = 0; i < getMatrix().GetLength(0); i++)
             {
-                for (int j = 0; j < GetMatrix().GetLength(1); j++)
+                for (int j = 0; j < getMatrix().GetLength(1); j++)
                 {
-                    if (!distinct.Contains(GetMatrix()[i, j]))
-                        distinct.Add(GetMatrix()[i, j]);
+                    if (!distinct.Contains(getMatrix()[i, j]))
+                        distinct.Add(getMatrix()[i, j]);
                 }
             }
             return distinct;
         }
-		/// <summary>
-		/// sets all vertices in sets
-		/// </summary>
-		private void SetVertices()
-		{
-			parent = new int[distinct.Count];
-			rank = new int[distinct.Count];
-			for (int i = 0; i < distinct.Count; i++)
-			{
-				parent[i] = i;
-			}
-		}
 
-		///<summary>HashSet<Edge> to contain the MST edges</summary>
-		HashSet<Edge> result = new HashSet<Edge>();
-		///<summary>Array of Edges to contain All edges</summary>
-		Edge[] Edges;
-		///<summary>Binary Heap used for sorting the array of edges</summary>
-		HeapSort heap = new HeapSort();
 
+		/// Contains index of each edge in the queue
+		public static int[] indeciesInQueue;
 
 		/// <summary>
-		/// Calculate the weights of each edge and fill the array of edges 
+		/// Gets the minimum span tree using Prim's algorithm
 		/// </summary>
-		private void calculateDistances()
+		private void MSTPrim()
         {
-            GetDistinctColors();
-			SetVertices(); 
 
-			Edges = new Edge[(distinct.Count * (distinct.Count - 1)) / 2];
-			int c = 0;
+			//Sumation of wieghts of the MST
+            double sum = 0;
+
+			//Number of distinct colors
+			int numberOfDistinctColors = distinct.Count;
+
+			/// Temporary edge to inqueue in 'edges'
+			Edge tmpEdge;
+
+			/// Priority queue contains edges in order
+			MinimumHeap edges = new MinimumHeap(numberOfDistinctColors - 1);
+
+			/// priority queue contains edges of MST
+			MinimumHeap result = new MinimumHeap(numberOfDistinctColors - 1);
+
+            indeciesInQueue = new int[numberOfDistinctColors];
 			
-            for (int i = 0; i < distinct.Count; i++)
+			//To check if vertix is visited or not
+			//each element is 1 if the vertix of this element is visited, or 0 if is not visited
+            int[] color = new int[numberOfDistinctColors];
+			
+			//Contains minimum wieght of each vertix
+            double[] minimumWieght = new double[numberOfDistinctColors];
+
+            int tmpSource = 0;
+            double tmpWieght;
+			//Loops on all vertices unless the last vertix O(V-1)
+            for (int i=0;i<numberOfDistinctColors-1;i++)
             {
-                for (int j = i+1; j < distinct.Count; j++)
+                color[tmpSource] = 1;
+				//Loops on all edges connected to the current vertix 'tmpSource'
+                for(int tmpDistination=0; tmpDistination < numberOfDistinctColors; tmpDistination++)
                 {
-						Edges[c] = new Edge(i, j, EculideanDistance(distinct.ElementAt(i), distinct.ElementAt(j)));
-						c++;
+					//If the current vertix is the initial vertix
+					if (i == 0)
+                    {
+						//If the distination vertix is not visited
+						if (color[tmpDistination] == 0)
+                        {
+                            tmpWieght = EculideanDistance(distinct.ElementAt(tmpSource), distinct.ElementAt(tmpDistination));
+                            tmpEdge = new Edge(tmpSource, tmpDistination, tmpWieght);
+                            minimumWieght[tmpDistination] = tmpWieght;
+                            indeciesInQueue[tmpDistination]=tmpDistination-1;
+                            // insert in the queue
+                            edges.Insert(tmpEdge);
+                        }
+                    }
+					//If the current vertix is NOT the initial
+                    else
+                    {
+						//If the distination vertix is NOT visited and the source is not the distination
+                        if (color[tmpDistination] == 0 && tmpSource!=tmpDistination)
+                        {
+                            tmpWieght = EculideanDistance(distinct.ElementAt(tmpSource), distinct.ElementAt(tmpDistination));
+                            if (tmpWieght < minimumWieght[tmpDistination])
+                            {
+                                //Update edge at the index found in 'indeciesInQueue[tmpDistination]' with 'tmpSource' and 'tmpWieght'
+                                edges.Update(indeciesInQueue[tmpDistination], tmpWieght, tmpSource);
+								//Update the minimum wieght of 'tmpDistination' with tmpWieght
+                                minimumWieght[tmpDistination] = tmpWieght;
+                            }
+                        }
+                    }           
                 }
+				//Moving to the next minimum vertix 
+                tmpEdge = edges.ExtractMinimum();
+                tmpSource = tmpEdge.destnation;
+                color[tmpEdge.destnation] = 1;
+                sum += tmpEdge.weight;
             }
 
-			//Sorting the array of edges
-			heap.Sort(Edges);
-
-        }
-
-
-		/// <summary>
-		/// Calculates the Minimum Spanning Tree of the distinct colors
-		/// </summary>
-		/// <returns>HashSet<Edge> contains the Edges of MST</returns>
-		private HashSet<Edge> MST()
-		{
-			//the summation of weights of final MST
-			double sum = 0;
-
-			calculateDistances();
-		// 'x', 'y' are the source and distination of the current edge
-		// 'rootX', 'rootY' are the roots of 'x' and 'y' in the tree of desjoint set
-		// 'i' is the counter of the loop
-			int rootX, rootY, x, y, i=0;
-
-			while (result.Count != distinct.Count-1)
-			{
-				x = Edges[i].source;
-				y = Edges[i].destnation;
-
-				rootX = find(x);
-				rootY = find(y);
-
-				// if 'x' and 'y' are not in the same group(don't have the same root)
-				if (rootX != rootY)
-				{
-					//the parent of the root with lower rank = the root with the greater rank
-					if (rank[rootX] < rank[rootY])
-						parent[rootX] = rootY;
-
-					else if (rank[rootY] < rank[rootX])
-						parent[rootY] = rootX;
-					
-					//if both roots has has the same rank
-					//put one of them as a parent of the other, then increment the rank of the parent
-					else
-					{
-						parent[rootY] = rootX;
-						rank[rootX]++;
-					}
-					result.Add(new Edge(x, y, Edges[i].weight));
-					sum += Edges[i].weight;
-				}
-				i++;
-			}
-
-			//===============TEST summition in sample cases======================
-			MessageBox.Show(distinct.Count.ToString() + "\n" + sum.ToString());
-			//===============TEST summition in sample cases======================
-			return result;
+			//========================== TEST ===============================================
+                      MessageBox.Show(distinct.Count.ToString() + "\n" + sum.ToString());
+			//========================== TEST ===============================================           
 		}
-
-		/// <summary>
-		/// Finds the parent of the given vertix
-		/// </summary>
-		/// <param name="v"></param>
-		/// <returns>the parent of 'v'</returns>
-		private int find(int v)
+		public void TEST()
 		{
-			//if parent of 'v' is not 'v'
-			if (parent[v] != v)
-				//recurcively find the parent of 'v' 
-				parent[v] = find(parent[v]);
-
-			return parent[v];
+			GetDistinct();
+			MSTPrim();
 		}
 
 
-		/// <summary>
-		/// :) دي بطيخ عادي 
-		/// </summary>
-        public void bate5()
-        {
-           MST();
-
-        }
-
-    }
-    
-        
+	}
 }
