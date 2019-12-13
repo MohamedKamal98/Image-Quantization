@@ -30,6 +30,10 @@ namespace ImageQuantization
             txtWidth.Text = ImageOperations.GetWidth(ImageMatrix).ToString();
             txtHeight.Text = ImageOperations.GetHeight(ImageMatrix).ToString();
 
+            //****************** Test *************************
+            QuantizationProcess p = new QuantizationProcess();
+            p.TEST();
+            // ******************** TEST TEST ********************
         }
 
         private void btnGaussSmooth_Click(object sender, EventArgs e)
