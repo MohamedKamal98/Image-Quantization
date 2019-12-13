@@ -32,7 +32,7 @@ namespace ImageQuantization
 
             //****************** Test *************************
             QuantizationProcess p = new QuantizationProcess();
-            p.bate5();
+            p.TEST();
             // ******************** TEST TEST ********************
         }
 

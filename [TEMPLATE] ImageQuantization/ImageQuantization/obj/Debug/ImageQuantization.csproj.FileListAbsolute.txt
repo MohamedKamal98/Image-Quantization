@@ -40,3 +40,12 @@ C:\Users\Kamal\Desktop\Last\Image-Quantization-master\Image Quantization Startup
 C:\Users\Kamal\Desktop\Last\Image-Quantization-master\Image Quantization Startup Code\[TEMPLATE] ImageQuantization\ImageQuantization\obj\Debug\ImageQuantization.csproj.CoreCompileInputs.cache
 C:\Users\Kamal\Desktop\Last\Image-Quantization-master\Image Quantization Startup Code\[TEMPLATE] ImageQuantization\ImageQuantization\obj\Debug\ImageQuantization.exe
 C:\Users\Kamal\Desktop\Last\Image-Quantization-master\Image Quantization Startup Code\[TEMPLATE] ImageQuantization\ImageQuantization\obj\Debug\ImageQuantization.pdb
+F:\projects\Image Quantization\Prim 1\Image-Quantization\[TEMPLATE] ImageQuantization\ImageQuantization\bin\Debug\ImageQuantization.exe
+F:\projects\Image Quantization\Prim 1\Image-Quantization\[TEMPLATE] ImageQuantization\ImageQuantization\bin\Debug\ImageQuantization.pdb
+F:\projects\Image Quantization\Prim 1\Image-Quantization\[TEMPLATE] ImageQuantization\ImageQuantization\obj\Debug\ImageQuantization.csprojAssemblyReference.cache
+F:\projects\Image Quantization\Prim 1\Image-Quantization\[TEMPLATE] ImageQuantization\ImageQuantization\obj\Debug\ImageQuantization.MainForm.resources
+F:\projects\Image Quantization\Prim 1\Image-Quantization\[TEMPLATE] ImageQuantization\ImageQuantization\obj\Debug\ImageQuantization.Properties.Resources.resources
+F:\projects\Image Quantization\Prim 1\Image-Quantization\[TEMPLATE] ImageQuantization\ImageQuantization\obj\Debug\ImageQuantization.csproj.GenerateResource.cache
+F:\projects\Image Quantization\Prim 1\Image-Quantization\[TEMPLATE] ImageQuantization\ImageQuantization\obj\Debug\ImageQuantization.csproj.CoreCompileInputs.cache
+F:\projects\Image Quantization\Prim 1\Image-Quantization\[TEMPLATE] ImageQuantization\ImageQuantization\obj\Debug\ImageQuantization.exe
+F:\projects\Image Quantization\Prim 1\Image-Quantization\[TEMPLATE] ImageQuantization\ImageQuantization\obj\Debug\ImageQuantization.pdb

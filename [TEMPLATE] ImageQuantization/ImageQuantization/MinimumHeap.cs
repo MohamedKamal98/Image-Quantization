@@ -50,8 +50,8 @@ namespace ImageQuantization
             if (min != index)
             {
                 Swap(ref arr[index], ref arr[min],index,min);
-                QuantizationProcess.dist[arr[index].destnation] = index;
-                QuantizationProcess.dist[arr[min].destnation] = min;
+                QuantizationProcess.indeciesInQueue[arr[index].destnation] = index;
+                QuantizationProcess.indeciesInQueue[arr[min].destnation] = min;
                 Min_Heapify(min);
             }
         }
@@ -99,8 +99,8 @@ namespace ImageQuantization
             while (index != 0 && arr[(index - 1) / 2].weight > arr[index].weight)
             {
                 Swap(ref arr[index], ref arr[(index - 1) / 2],index+1,((index - 1) / 2)+1);
-                QuantizationProcess.dist[arr[index].destnation] = index;
-                QuantizationProcess.dist[arr[(index - 1) / 2].destnation] = (index - 1) / 2;
+                QuantizationProcess.indeciesInQueue[arr[index].destnation] = index;
+                QuantizationProcess.indeciesInQueue[arr[(index - 1) / 2].destnation] = (index - 1) / 2;
                 index = (index - 1) / 2;
             }
         }
@@ -115,7 +115,7 @@ namespace ImageQuantization
             HeapDecreaseKey(HeapSize - 1, key);
         }
 
-        public void Updaet(int index,double w,int parent)
+        public void Update(int index,double w,int parent)
         {
             arr[index].weight = w;
             arr[index].source = parent;
