@@ -5,6 +5,8 @@ using System.Text;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Drawing.Imaging;
+using System.Collections;
+
 
 namespace ImageQuantization
 {
@@ -34,17 +36,6 @@ namespace ImageQuantization
 
     class QuantizationProcess
     {
-        
-        /// <summary>
-        /// Get the 2D array of colors (size: Height x Width) from Main Form
-        /// </summary>
-        /// <returns>2D array of colors</returns>
-        public RGBPixel[,] getMatrix()
-        {
-            return MainForm.ImageMatrix;
-        }
-
-        HashSet<RGBPixel> distinct = new HashSet<RGBPixel>();
 		/// <summary>
 		/// Calculates eculidean distance between the given two edges
 		/// </summary>
@@ -55,38 +46,55 @@ namespace ImageQuantization
         {
             return Math.Sqrt((Math.Pow((rgb1.red - rgb2.red), 2)) + (Math.Pow((rgb1.green - rgb2.green), 2)) + (Math.Pow((rgb1.blue - rgb2.blue), 2)));
         }
-		/// <summary>
-		/// Gets the distinct colors from the matrix of colors
-		/// </summary>
-		/// <returns>Set of colors</returns>
-        public HashSet<RGBPixel> GetDistinct()
+        // Hashtable that contains all unique colors 
+        public static Hashtable distinctHashtable;
+        // Array of distincit Colors 
+        public static RGBPixel[] distinctColors;
+        /// <summary>
+        /// Gets the distinct colors from the matrix of colors
+        /// </summary>
+        /// <returns>Set of colors</returns>
+        public static void GetDistinct(RGBPixel[,] M)
         {
-            for (int i = 0; i < getMatrix().GetLength(0); i++)
+            distinctHashtable = new Hashtable();
+            distinctColors = new RGBPixel[M.GetLength(1) * M.GetLength(0)];
+            int hashFunctionKey = 0;
+            int Counter = 0;
+            for (int i = 0; i < M.GetLength(0); i++)
             {
-                for (int j = 0; j < getMatrix().GetLength(1); j++)
+                for (int j = 0; j < M.GetLength(1); j++)
                 {
-                    if (!distinct.Contains(getMatrix()[i, j]))
-                        distinct.Add(getMatrix()[i, j]);
+                    // Calculates the Key of the hashtable from three integers (red,blue,green) 
+                    hashFunctionKey = 8 * (M[i, j].green + M[i, j].blue) * (M[i, j].green + M[i, j].blue + 1) + M[i, j].blue;
+                    hashFunctionKey = 5 * (hashFunctionKey + M[i, j].red) * (hashFunctionKey + M[i, j].red + 1) + M[i,j].red;
+
+                    if (!distinctHashtable.ContainsKey(hashFunctionKey))
+                    {
+                        distinctHashtable.Add(hashFunctionKey, Counter);
+                        distinctColors[Counter] = M[i, j];
+                        Counter++;
+                    }
                 }
             }
-            return distinct;
         }
 
-
-		/// Contains index of each edge in the queue
-		public static int[] indeciesInQueue;
-
+        /// Contains index of each edge in the queue
+        public static int[] indeciesInQueue;
+        
 		/// <summary>
 		/// Gets the minimum span tree using Prim's algorithm
 		/// </summary>
 		private void MSTPrim()
         {
-
+            
 			//Sumation of wieghts of the MST
-            double sum = 0;
+            double MSTEdgesSum = 0;
 
 			//Number of distinct colors
-			int numberOfDistinctColors = distinct.Count;
+			int numberOfDistinctColors = distinctHashtable.Count;
+
+			// result edges of MST
+			MSTresult = new MinimumHeap(numberOfDistinctColors - 1);
 
 			/// Temporary edge to inqueue in 'edges'
 			Edge tmpEdge;
@@ -94,73 +102,160 @@ namespace ImageQuantization
 			/// Priority queue contains edges in order
 			MinimumHeap edges = new MinimumHeap(numberOfDistinctColors - 1);
 
-			/// priority queue contains edges of MST
-			MinimumHeap result = new MinimumHeap(numberOfDistinctColors - 1);
 
             indeciesInQueue = new int[numberOfDistinctColors];
-			
-			//To check if vertix is visited or not
-			//each element is 1 if the vertix of this element is visited, or 0 if is not visited
-            int[] color = new int[numberOfDistinctColors];
-			
+
 			//Contains minimum wieght of each vertix
             double[] minimumWieght = new double[numberOfDistinctColors];
-
+            // List of all non Visted Nodes 
+            List<int> nonVisted = new List<int>();
             int tmpSource = 0;
             double tmpWieght;
-			//Loops on all vertices unless the last vertix O(V-1)
-            for (int i=0;i<numberOfDistinctColors-1;i++)
+            int tmpDistination;
+            /// Loop to fill the minimum wieght of each vertex with the distination between each one of them and the first node which is the tmpSource O(D)
+            for ( tmpDistination = 1; tmpDistination < numberOfDistinctColors; tmpDistination++)
             {
-                color[tmpSource] = 1;
-				//Loops on all edges connected to the current vertix 'tmpSource'
-                for(int tmpDistination=0; tmpDistination < numberOfDistinctColors; tmpDistination++)
-                {
-					//If the current vertix is the initial vertix
-					if (i == 0)
-                    {
-						//If the distination vertix is not visited
-						if (color[tmpDistination] == 0)
-                        {
-                            tmpWieght = EculideanDistance(distinct.ElementAt(tmpSource), distinct.ElementAt(tmpDistination));
-                            tmpEdge = new Edge(tmpSource, tmpDistination, tmpWieght);
-                            minimumWieght[tmpDistination] = tmpWieght;
-                            indeciesInQueue[tmpDistination]=tmpDistination-1;
-                            // insert in the queue
-                            edges.Insert(tmpEdge);
-                        }
-                    }
-					//If the current vertix is NOT the initial
-                    else
-                    {
-						//If the distination vertix is NOT visited and the source is not the distination
-                        if (color[tmpDistination] == 0 && tmpSource!=tmpDistination)
-                        {
-                            tmpWieght = EculideanDistance(distinct.ElementAt(tmpSource), distinct.ElementAt(tmpDistination));
-                            if (tmpWieght < minimumWieght[tmpDistination])
-                            {
-                                //Update edge at the index found in 'indeciesInQueue[tmpDistination]' with 'tmpSource' and 'tmpWieght'
-                                edges.Update(indeciesInQueue[tmpDistination], tmpWieght, tmpSource);
-								//Update the minimum wieght of 'tmpDistination' with tmpWieght
-                                minimumWieght[tmpDistination] = tmpWieght;
-                            }
-                        }
-                    }           
-                }
-				//Moving to the next minimum vertix 
-                tmpEdge = edges.ExtractMinimum();
-                tmpSource = tmpEdge.destnation;
-                color[tmpEdge.destnation] = 1;
-                sum += tmpEdge.weight;
+                        nonVisted.Add(tmpDistination);
+                        tmpWieght = EculideanDistance(distinctColors[tmpSource], distinctColors[tmpDistination]);
+                        tmpEdge = new Edge(tmpSource, tmpDistination, tmpWieght);
+                        minimumWieght[tmpDistination] = tmpWieght;
+                        indeciesInQueue[tmpDistination] = tmpDistination - 1;
+                        // insert in the queue
+                        edges.Insert(tmpEdge);
             }
-
+            // take the min edge in the queue
+            tmpEdge = edges.ExtractMinimum();
+            // insert the min edge in the result MST queue
+            MSTresult.Insert(tmpEdge);
+            // the next source will be the min edge distination 
+            tmpSource = tmpEdge.destnation;
+            // remove the min edge distination from the nonVisted list as it become Vistied 
+            nonVisted.Remove(tmpSource);
+            // add the min edge Weight to the Summution of MST edges
+            MSTEdgesSum += tmpEdge.weight;
+            /// Nested Loop that Calculate the MST  O(Elog(V))
+            /// first Loop O(E) that takes all edges in the queue 
+            while (edges.HeapSize!=0)
+            {
+                /// Second Loop that Calculate the distance between the tmpSource and all of the non visted nodes O(Log(V))
+                for (int i = 0; i < nonVisted.Count; i++)
+                {
+                    tmpDistination = nonVisted[i];
+                    tmpWieght = EculideanDistance(distinctColors[tmpSource], distinctColors[tmpDistination]);
+                    if (tmpWieght < minimumWieght[tmpDistination])
+                    {
+                        //Update edge at the index found in 'indeciesInQueue[tmpDistination]' with 'tmpSource' and 'tmpWieght'
+                        edges.Update(indeciesInQueue[tmpDistination], tmpWieght, tmpSource);
+                        //Update the minimum wieght of 'tmpDistination' with tmpWieght
+                        minimumWieght[tmpDistination] = tmpWieght;
+                    }
+                }
+                // take the min edge in the queue
+                tmpEdge = edges.ExtractMinimum();
+                // insert the min edge in the result MST queue
+                MSTresult.Insert(tmpEdge);
+                // the next source will be the min edge distination 
+                tmpSource = tmpEdge.destnation;
+                // remove the min edge distination from the nonVisted list as it become Vistied 
+                nonVisted.Remove(tmpSource);
+                // add the min edge Weight to the Summution of MST edges
+                MSTEdgesSum += tmpEdge.weight;
+            }
+              
 			//========================== TEST ===============================================
-                      MessageBox.Show(distinct.Count.ToString() + "\n" + sum.ToString());
+                      MessageBox.Show(distinctHashtable.Count.ToString() + "\n" + MSTEdgesSum.ToString());
 			//========================== TEST ===============================================           
 		}
+		/// priority queue contains edges of MST
+		MinimumHeap MSTresult;
+
+		//colors palett
+		HashSet<int>[] P;
+
+		public void Cluster(int K)
+		{
+			P = new HashSet<int>[K];
+			Hashtable T = new Hashtable();
+			Edge edge;
+			int RV = distinctHashtable.Count, RC = K, Pi = 0, src, dis;
+			bool srcFound = false, disFound = false;
+
+			while(RC != 0)
+			{
+				edge = MSTresult.ExtractMinimum();
+				src = edge.source;
+				dis = edge.destnation;
+				srcFound = T.ContainsKey(src);
+				disFound = T.ContainsKey(dis);
+				if(!srcFound || !disFound)
+				{
+					if (RV > RC)
+					{
+						if (!srcFound && !disFound)
+						{
+							P[Pi] = new HashSet<int>();
+							P[Pi].Add(src);
+							P[Pi].Add(dis);
+
+							T.Add(src, Pi);
+							T.Add(dis, Pi);
+							Pi++;
+							RV -= 2;
+							RC--;
+						}
+						else if(srcFound && !disFound)
+						{
+							if (RV != RC)
+							{
+								P[(int)T[src]].Add(dis);
+								T.Add(dis,(int)T[src]);
+								RV--;
+							}
+						}
+						else
+						{
+							if (RV != RC)
+							{
+								P[(int)T[dis]].Add(src);
+								T.Add(src, (int)T[dis]);
+								RV--;
+							}
+						}
+					}
+					else
+					{
+						if (!srcFound)
+						{
+							P[Pi] = new HashSet<int>();
+							P[Pi].Add(src);
+
+							T.Add(src, Pi);
+							Pi++;
+							RV--;
+							RC--;
+						}
+						else
+						{
+							P[Pi] = new HashSet<int>();
+							P[Pi].Add(dis);
+
+							T.Add(dis, Pi);
+
+							Pi++;
+							RV--;
+							RC--;
+						}
+					}
+				}
+
+			}
+
+		}
+
 		public void TEST()
 		{
-			GetDistinct();
 			MSTPrim();
+			Cluster(5);
 		}
 
 

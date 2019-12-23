@@ -26,10 +26,13 @@ namespace ImageQuantization
                 string OpenedFilePath = openFileDialog1.FileName;
                 ImageMatrix = ImageOperations.OpenImage(OpenedFilePath);
                 ImageOperations.DisplayImage(ImageMatrix, pictureBox1);
+                
             }
             txtWidth.Text = ImageOperations.GetWidth(ImageMatrix).ToString();
             txtHeight.Text = ImageOperations.GetHeight(ImageMatrix).ToString();
 
+            // Call Get Distincit to get all distincit colors from ImageMatrix
+            QuantizationProcess.GetDistinct(ImageMatrix);
             //****************** Test *************************
             QuantizationProcess p = new QuantizationProcess();
             p.TEST();

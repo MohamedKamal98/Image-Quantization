@@ -17,7 +17,7 @@ namespace ImageQuantization
         }
 
         /// <summary>
-        /// This function swaps two int values
+        /// This function swaps two Edges
         /// </summary>
         public static void Swap(ref Edge x, ref Edge y,int i,int j)
         {
@@ -25,9 +25,6 @@ namespace ImageQuantization
             temp = x;
             x = y;
             y = temp;
-           // int t = QuantizationProcess.dist[i];
-            //QuantizationProcess.dist[i] = QuantizationProcess.dist[j];
-            //QuantizationProcess.dist[j] = t;
         }
 
         /// <summary>
@@ -108,17 +105,23 @@ namespace ImageQuantization
         /// <summary>
         /// This function inserts a new node and re-heap the tree
         /// </summary>
+        
         public void Insert(Edge key)
         {
             HeapSize++;
             arr[HeapSize - 1] = null;
             HeapDecreaseKey(HeapSize - 1, key);
         }
-
-        public void Update(int index,double w,int parent)
+        /// <summary>
+        /// Update the wieght and the source of a specific edge in the queue and modifies the nodes to its proper position 
+        /// </summary>
+        /// <param name="index"> index of the egde in the queue </param>
+        /// <param name="newWeight"> the new wieght that will be updated with </param>
+        /// <param name="newSource"> the new source that will nbe updated with </param>
+        public void Update(int index,double newWeight, int newSource)
         {
-            arr[index].weight = w;
-            arr[index].source = parent;
+            arr[index].weight = newWeight;
+            arr[index].source = newSource;
             HeapDecreaseKey(index, arr[index]);
         }
     }
