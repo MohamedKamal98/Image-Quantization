@@ -6,7 +6,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Drawing.Imaging;
 using System.Collections;
-
+using System.Collections.Specialized;
 
 namespace ImageQuantization
 {
@@ -170,21 +170,25 @@ namespace ImageQuantization
 		MinimumHeap MSTresult;
 
 		//colors palett
-		HashSet<int>[] P;
+		RGBPixel[] P;
 
 		public void Cluster(int K)
 		{
-			P = new HashSet<int>[K];
+			P = new RGBPixel[K];
+			int[] RGBCount = new int[K]; 
 			Hashtable T = new Hashtable();
 			Edge edge;
-			int RV = distinctHashtable.Count, RC = K, Pi = 0, src, dis;
+			int RV = distinctHashtable.Count, RC = K, Pi = 0, src, dis, tmpIndex;
 			bool srcFound = false, disFound = false;
 
+			//O(K)
 			while(RC != 0)
 			{
+				//O(logn)
 				edge = MSTresult.ExtractMinimum();
 				src = edge.source;
 				dis = edge.destnation;
+				//O(1)
 				srcFound = T.ContainsKey(src);
 				disFound = T.ContainsKey(dis);
 				if(!srcFound || !disFound)
@@ -193,9 +197,17 @@ namespace ImageQuantization
 					{
 						if (!srcFound && !disFound)
 						{
-							P[Pi] = new HashSet<int>();
-							P[Pi].Add(src);
-							P[Pi].Add(dis);
+							RGBCount[Pi] = 2;
+
+							//add the first 2 pixles in P[Pi]
+							P[Pi].red += distinctColors[src].red;
+							P[Pi].green += distinctColors[src].green;
+							P[Pi].blue += distinctColors[src].blue;
+
+							//divide the result over 2 to get the avarege
+							P[Pi].red =(byte)((P[Pi].red + distinctColors[dis].red) / RGBCount[Pi]);
+							P[Pi].green = (byte)((P[Pi].green + distinctColors[dis].green) / RGBCount[Pi]);
+							P[Pi].blue = (byte)((P[Pi].blue + distinctColors[dis].blue) / RGBCount[Pi]);
 
 							T.Add(src, Pi);
 							T.Add(dis, Pi);
@@ -207,7 +219,13 @@ namespace ImageQuantization
 						{
 							if (RV != RC)
 							{
-								P[(int)T[src]].Add(dis);
+								tmpIndex = (int)T[src];
+
+								//Accessing Hashtable O(1)
+								P[tmpIndex].red = (byte)((P[tmpIndex].red*RGBCount[tmpIndex] + distinctColors[src].red)/++RGBCount[tmpIndex]);
+								P[tmpIndex].green = (byte)((P[tmpIndex].green * RGBCount[tmpIndex] + distinctColors[src].green) / ++RGBCount[tmpIndex]);
+								P[tmpIndex].blue = (byte)((P[tmpIndex].blue * RGBCount[tmpIndex] + distinctColors[src].blue) / ++RGBCount[tmpIndex]);
+
 								T.Add(dis,(int)T[src]);
 								RV--;
 							}
@@ -216,7 +234,13 @@ namespace ImageQuantization
 						{
 							if (RV != RC)
 							{
-								P[(int)T[dis]].Add(src);
+								tmpIndex = (int)T[dis];
+
+								P[tmpIndex].red = (byte)((P[tmpIndex].red * RGBCount[tmpIndex] + distinctColors[dis].red) / ++RGBCount[tmpIndex]);
+								P[tmpIndex].green = (byte)((P[tmpIndex].green * RGBCount[tmpIndex] + distinctColors[dis].green) / ++RGBCount[tmpIndex]);
+								P[tmpIndex].blue = (byte)((P[tmpIndex].blue * RGBCount[tmpIndex] + distinctColors[dis].blue) / ++RGBCount[tmpIndex]);
+
+
 								T.Add(src, (int)T[dis]);
 								RV--;
 							}
@@ -226,8 +250,9 @@ namespace ImageQuantization
 					{
 						if (!srcFound)
 						{
-							P[Pi] = new HashSet<int>();
-							P[Pi].Add(src);
+							P[Pi].red += distinctColors[src].red;
+							P[Pi].green += distinctColors[src].green;
+							P[Pi].blue += distinctColors[src].blue;
 
 							T.Add(src, Pi);
 							Pi++;
@@ -236,8 +261,9 @@ namespace ImageQuantization
 						}
 						else
 						{
-							P[Pi] = new HashSet<int>();
-							P[Pi].Add(dis);
+							P[Pi].red += distinctColors[dis].red;
+							P[Pi].green += distinctColors[dis].green;
+							P[Pi].blue += distinctColors[dis].blue;
 
 							T.Add(dis, Pi);
 
@@ -252,10 +278,12 @@ namespace ImageQuantization
 
 		}
 
+
 		public void TEST()
 		{
+			
 			MSTPrim();
-			Cluster(5);
+			Cluster(3);
 		}
 
 
