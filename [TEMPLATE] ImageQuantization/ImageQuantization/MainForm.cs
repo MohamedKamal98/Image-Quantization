@@ -19,6 +19,7 @@ namespace ImageQuantization
 
         private void btnOpen_Click(object sender, EventArgs e)
         {
+
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
@@ -35,11 +36,19 @@ namespace ImageQuantization
             QuantizationProcess.GetDistinct(ImageMatrix);
             //****************** Test *************************
             QuantizationProcess p = new QuantizationProcess();
-            p.TEST();
-            // ******************** TEST TEST ********************
-        }
+			p.TEST();
+			//enter K in the Gauss Sigma's textBox
+			int k =Convert.ToInt16(txtGaussSigma.Text);
+				p.Cluster(k);
+				p.replaceWithPaletteColors(ImageMatrix);
+				ImageOperations.DisplayImage(ImageMatrix, pictureBox2);
 
-        private void btnGaussSmooth_Click(object sender, EventArgs e)
+			// ******************** TEST TEST ********************
+
+
+
+		}
+		private void btnGaussSmooth_Click(object sender, EventArgs e)
         {
             double sigma = double.Parse(txtGaussSigma.Text);
             int maskSize = (int)nudMaskSize.Value ;

@@ -50,15 +50,25 @@ namespace ImageQuantization
         public static Hashtable distinctHashtable;
         // Array of distincit Colors 
         public static RGBPixel[] distinctColors;
-        /// <summary>
-        /// Gets the distinct colors from the matrix of colors
-        /// </summary>
-        /// <returns>Set of colors</returns>
-        public static void GetDistinct(RGBPixel[,] M)
+
+		public static int[,] vertixNumber;
+
+		public static int width, height;
+		/// <summary>
+		/// Gets the distinct colors from the matrix of colors
+		/// </summary>
+		/// <returns>Set of colors</returns>
+		public static void GetDistinct(RGBPixel[,] M)
         {
+			width = M.GetLength(0);
+			height = M.GetLength(1);
             distinctHashtable = new Hashtable();
-            distinctColors = new RGBPixel[M.GetLength(1) * M.GetLength(0)];
-            int hashFunctionKey = 0;
+
+			distinctColors = new RGBPixel[width * height];
+
+			vertixNumber = new int[width,height];
+
+			int hashFunctionKey = 0;
             int Counter = 0;
             for (int i = 0; i < M.GetLength(0); i++)
             {
@@ -74,6 +84,7 @@ namespace ImageQuantization
                         distinctColors[Counter] = M[i, j];
                         Counter++;
                     }
+					vertixNumber[i, j] = (int)distinctHashtable[hashFunctionKey];
                 }
             }
         }
@@ -170,120 +181,174 @@ namespace ImageQuantization
 		MinimumHeap MSTresult;
 
 		//colors palett
-		RGBPixel[] P;
+		RGBPixel[] Palette;
 
+		Hashtable takenVertices;
 		public void Cluster(int K)
 		{
-			P = new RGBPixel[K];
+			//Contains the average of the clusters
+			Palette = new RGBPixel[K];
+
+			//Contains the number of colors in each cluster (used for calculating the average)
 			int[] RGBCount = new int[K]; 
-			Hashtable T = new Hashtable();
+
+			//Contains all clustered vertecies
+			takenVertices = new Hashtable();
+			
+			//Containes each edge in the resulte edges
 			Edge edge;
-			int RV = distinctHashtable.Count, RC = K, Pi = 0, src, dis, tmpIndex;
+
+			//	number of non-clusterd vertices		 , number of remaining clusters 
+			int remainVertecies = distinctHashtable.Count, remainClusters = K, indexInPalette = 0, src, dis, tmpIndex;
 			bool srcFound = false, disFound = false;
 
-			//O(K)
-			while(RC != 0)
+			//O(D)
+			while(remainVertecies != 0)
 			{
+				
 				//O(logn)
 				edge = MSTresult.ExtractMinimum();
 				src = edge.source;
 				dis = edge.destnation;
 				//O(1)
-				srcFound = T.ContainsKey(src);
-				disFound = T.ContainsKey(dis);
-				if(!srcFound || !disFound)
+				srcFound = takenVertices.ContainsKey(src);
+				disFound = takenVertices.ContainsKey(dis);
+
+				//if src & dis or one of them is found in takenVertices
+				if (!srcFound || !disFound)
 				{
-					if (RV > RC)
+					//if remaining vertices > remaining clusters then add new cluster or extend an old cluster
+					if (remainVertecies > remainClusters )
 					{
-						if (!srcFound && !disFound)
+						//if src and dis both are not found in takenVertices
+						if (!srcFound && !disFound )
 						{
-							RGBCount[Pi] = 2;
-
-							//add the first 2 pixles in P[Pi]
-							P[Pi].red += distinctColors[src].red;
-							P[Pi].green += distinctColors[src].green;
-							P[Pi].blue += distinctColors[src].blue;
-
-							//divide the result over 2 to get the avarege
-							P[Pi].red =(byte)((P[Pi].red + distinctColors[dis].red) / RGBCount[Pi]);
-							P[Pi].green = (byte)((P[Pi].green + distinctColors[dis].green) / RGBCount[Pi]);
-							P[Pi].blue = (byte)((P[Pi].blue + distinctColors[dis].blue) / RGBCount[Pi]);
-
-							T.Add(src, Pi);
-							T.Add(dis, Pi);
-							Pi++;
-							RV -= 2;
-							RC--;
-						}
-						else if(srcFound && !disFound)
-						{
-							if (RV != RC)
+							//if remaining vertices > 0 then add new cluster of(src, dis)
+							if(remainClusters > 0)
 							{
-								tmpIndex = (int)T[src];
+								RGBCount[indexInPalette] = 2;
 
-								//Accessing Hashtable O(1)
-								P[tmpIndex].red = (byte)((P[tmpIndex].red*RGBCount[tmpIndex] + distinctColors[src].red)/++RGBCount[tmpIndex]);
-								P[tmpIndex].green = (byte)((P[tmpIndex].green * RGBCount[tmpIndex] + distinctColors[src].green) / ++RGBCount[tmpIndex]);
-								P[tmpIndex].blue = (byte)((P[tmpIndex].blue * RGBCount[tmpIndex] + distinctColors[src].blue) / ++RGBCount[tmpIndex]);
+								//add the RGB of src in Palette[indexInPalette]
+								Palette[indexInPalette].red += distinctColors[src].red;
+								Palette[indexInPalette].green += distinctColors[src].green;
+								Palette[indexInPalette].blue += distinctColors[src].blue;
 
-								T.Add(dis,(int)T[src]);
-								RV--;
+								//add the RGB of dis and divide the result over 2 to get the avarege
+								Palette[indexInPalette].red = (byte)((Palette[indexInPalette].red + distinctColors[dis].red) / RGBCount[indexInPalette]);
+								Palette[indexInPalette].green = (byte)((Palette[indexInPalette].green + distinctColors[dis].green) / RGBCount[indexInPalette]);
+								Palette[indexInPalette].blue = (byte)((Palette[indexInPalette].blue + distinctColors[dis].blue) / RGBCount[indexInPalette]);
+
+								//add src & dis to taken vertices
+								takenVertices.Add(src, indexInPalette);
+								takenVertices.Add(dis, indexInPalette);
+
+								indexInPalette++;
+								remainClusters--;
 							}
 						}
+						//if src is found and dis is not found in takenVertices
+						else if (srcFound && !disFound)
+						{
+							//if remaining vertices is not the remaining clusters then add the dis to the cluster of src
+							if (remainVertecies != remainClusters)
+							{
+								tmpIndex = (int)takenVertices[src];
+
+								//calculating the average of the extended cluster
+								//Accessing Hashtable O(1)
+								Palette[tmpIndex].red = (byte)((Palette[tmpIndex].red*RGBCount[tmpIndex] + distinctColors[dis].red)/++RGBCount[tmpIndex]);
+								Palette[tmpIndex].green = (byte)((Palette[tmpIndex].green * RGBCount[tmpIndex] + distinctColors[dis].green) / ++RGBCount[tmpIndex]);
+								Palette[tmpIndex].blue = (byte)((Palette[tmpIndex].blue * RGBCount[tmpIndex] + distinctColors[dis].blue) / ++RGBCount[tmpIndex]);
+
+
+								takenVertices.Add(dis,(int)takenVertices[src]);
+							}
+						}
+						//if src is not found and dis is found in takenVertices
 						else
 						{
-							if (RV != RC)
+							//if remaining vertices is not the remaining clusters then add the src to the cluster of dis
+							if (remainVertecies != remainClusters)
 							{
-								tmpIndex = (int)T[dis];
+								tmpIndex = (int)takenVertices[dis];
 
-								P[tmpIndex].red = (byte)((P[tmpIndex].red * RGBCount[tmpIndex] + distinctColors[dis].red) / ++RGBCount[tmpIndex]);
-								P[tmpIndex].green = (byte)((P[tmpIndex].green * RGBCount[tmpIndex] + distinctColors[dis].green) / ++RGBCount[tmpIndex]);
-								P[tmpIndex].blue = (byte)((P[tmpIndex].blue * RGBCount[tmpIndex] + distinctColors[dis].blue) / ++RGBCount[tmpIndex]);
+								//calculating the average of the extended cluster
+								//Accessing Hashtable O(1)
+								Palette[tmpIndex].red = (byte)((Palette[tmpIndex].red * RGBCount[tmpIndex] + distinctColors[src].red) / ++RGBCount[tmpIndex]);
+								Palette[tmpIndex].green = (byte)((Palette[tmpIndex].green * RGBCount[tmpIndex] + distinctColors[src].green) / ++RGBCount[tmpIndex]);
+								Palette[tmpIndex].blue = (byte)((Palette[tmpIndex].blue * RGBCount[tmpIndex] + distinctColors[src].blue) / ++RGBCount[tmpIndex]);
 
 
-								T.Add(src, (int)T[dis]);
-								RV--;
+								takenVertices.Add(src, (int)takenVertices[dis]);
 							}
 						}
 					}
+					//if remaining vertices = remaining clusters then each singel vertix is a cluster 
 					else
 					{
+						//if src is not found in takenVertices then add a new cluster of 'src'
 						if (!srcFound)
 						{
-							P[Pi].red += distinctColors[src].red;
-							P[Pi].green += distinctColors[src].green;
-							P[Pi].blue += distinctColors[src].blue;
+							Palette[indexInPalette].red += distinctColors[src].red;
+							Palette[indexInPalette].green += distinctColors[src].green;
+							Palette[indexInPalette].blue += distinctColors[src].blue;
 
-							T.Add(src, Pi);
-							Pi++;
-							RV--;
-							RC--;
+							takenVertices.Add(src, indexInPalette);
+
+							indexInPalette++;
+							remainClusters--;
 						}
+						//if dis is not found in takenVertices then add a new cluster of 'dis'
 						else
 						{
-							P[Pi].red += distinctColors[dis].red;
-							P[Pi].green += distinctColors[dis].green;
-							P[Pi].blue += distinctColors[dis].blue;
+							Palette[indexInPalette].red += distinctColors[dis].red;
+							Palette[indexInPalette].green += distinctColors[dis].green;
+							Palette[indexInPalette].blue += distinctColors[dis].blue;
 
-							T.Add(dis, Pi);
+							takenVertices.Add(dis, indexInPalette);
 
-							Pi++;
-							RV--;
-							RC--;
+							indexInPalette++;
+							remainClusters--;
 						}
 					}
 				}
-
+				//number of remaining vertices = number of all vertices - number of taken vertices
+				remainVertecies = distinctHashtable.Count - takenVertices.Count;
 			}
 
 		}
+		/// <summary>
+		/// Replaces the color of each pixel in the original matrix with the closest color in the palette
+		/// </summary>
+		/// <param name="M"></param>
+		public void replaceWithPaletteColors(RGBPixel[,] M)
+		{
+			int indexInDistinct, indexOfCluster;
+			for (int i = 0; i < width; i++)
+			{
+				for (int j = 0; j < height; j++)
+				{
+					//getting the index of the current color in the destincit colors
+					indexInDistinct = vertixNumber[i, j];
+					//getting the index of the cluster of the current color in the palette
+					indexOfCluster = (int)takenVertices[indexInDistinct];
+					//replacing the current color with the color of it's cluster
+					M[i, j] = Palette[indexOfCluster];
+				}
 
-
+			}
+		}
 		public void TEST()
 		{
 			
 			MSTPrim();
-			Cluster(3);
+			/*************** IMPORTANT NOTE ***************
+				
+				before choosing the pictuer enter the number of clusters(K) 
+				in the Gauss Sigma's textBox on the right of the form
+
+ 			*****************IMPORTANT NOTE **************/
+			//	Cluster(3);
 		}
 
 
